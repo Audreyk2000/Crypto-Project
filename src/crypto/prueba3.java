@@ -1,6 +1,7 @@
 package crypto;
 
 import javax.crypto.*;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.nio.file.Files;
@@ -19,27 +20,42 @@ public class prueba3 {
         SecureRandom random = new SecureRandom();
         keyGen.init(random);
         SecretKey secretKey = keyGen.generateKey();
-        System.out.println(secretKey);
+        IvParameterSpec IV = generateIv();
+        String placeHolderPass = "manzana";
 
         // Encrypt directory
-        encryptDirectory(dirPath, secretKey);
+        encryptDirectory(dirPath, secretKey, IV);
 
         // Save key to file
         saveKeyToFile(dirPath, secretKey);
 
         // Ask user for key
-       // SecretKey userKey = getUserKey();
-
-        // Decrypt directory
-        decryptDirectory(dirPath, secretKey);
+        Scanner scanner = new Scanner(System.in);
+        int i=1;
+        do {
+        System.out.println("Enter the password: \n");
+        String input = new String();
+        input = scanner.nextLine();
+        if(input.equals(placeHolderPass))
+        i=0;
+        else
+        	System.out.println("Contraseña incorrecta");
+        }while(i!=0);
+        
+        SecretKey userKey = getUserKey(dirPath);
+     // Decrypt directory
+        decryptDirectory(dirPath, userKey, IV);
+       
+  
+        
     }
 
-    public static void encryptDirectory(String dirPath, SecretKey secretKey) throws Exception {
+    public static void encryptDirectory(String dirPath, SecretKey secretKey,IvParameterSpec IV) throws Exception {
         // Initialize cipher
         Cipher cipher = Cipher.getInstance("AES");
 
         // Initialize cipher with secret key
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey,IV);
 
         // Iterate over all files in directory
         Files.walk(Paths.get(dirPath)).forEach(filePath -> {
@@ -84,12 +100,12 @@ public class prueba3 {
         return secretKey;
     }
 
-    public static void decryptDirectory(String dirPath, SecretKey secretKey) throws Exception {
+    public static void decryptDirectory(String dirPath, SecretKey secretKey,IvParameterSpec IV) throws Exception {
         // Initialize cipher
         Cipher cipher = Cipher.getInstance("AES");
 
         // Initialize cipher with secret key
-        cipher.init(Cipher.DECRYPT_MODE, secretKey);
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, IV);
 
         // Iterate over all files in directory
         Files.walk(Paths.get(dirPath)).forEach(filePath -> {
@@ -114,5 +130,10 @@ public class prueba3 {
                 }
             }
         });
+    }
+    public static IvParameterSpec generateIv() {
+        byte[] iv = new byte[16];
+        new SecureRandom().nextBytes(iv);
+        return new IvParameterSpec(iv);
     }
 }
